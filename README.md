@@ -16,12 +16,9 @@ Benchmarking approximate nearest-neighbor search using `hnswlib` on standard ANN
 8. [Current Parameter Grid](#8-current-parameter-grid)
 9. [Output JSON Schema](#9-output-json-schema)
 10. [Function Documentation](#10-function-documentation)
-11. [How to Modify the Benchmark](#11-how-to-modify-the-benchmark)
-12. [Recommended Next Improvements](#12-recommended-next-improvements)
-13. [Troubleshooting](#13-troubleshooting)
-14. [Suggested Learning Resources](#14-suggested-learning-resources)
-15. [Minimal Workflow for a New Student](#15-minimal-workflow-for-a-new-student)
-16. [Current Project Status](#16-current-project-status)
+11. [Moving Forward](#12-recommended-next-improvements)
+12. [Suggested Learning Resources](#14-suggested-learning-resources)
+
 
 ---
 
@@ -215,7 +212,7 @@ Expands to:
 
 Because the script runs both SIFT and DEEP, that's up to **2000 benchmark attempts**. DEEP has original dim 96, so `target_dim=120` is skipped automatically.
 
-F
+
 ---
 
 ## 8. Output JSON Schema
