@@ -1,6 +1,5 @@
 # HNSW + Dimensionality Reduction Benchmarking
-
-Benchmarking approximate nearest-neighbor search using `hnswlib` on standard ANN benchmark datasets.
+Benchmarking approximate nearest-neighbor search using `hnswlib` on standard ANN benchmark datasets with various combinations of topological hyperparameters. 
 
 ---
 
@@ -33,10 +32,11 @@ The benchmark pipeline is:
 
 1. Download / load benchmark datasets.
 2. Optionally reduce dimensionality with **PCA** or **Gaussian Random Projection**.
-3. Build an **HNSW** index with configurable parameters.
+3. Build an **HNSW** index with configurable parameters. 
 4. Time per-query nearest-neighbor search.
 5. Save results as JSON.
 6. Aggregate saved results and plot query-time distributions by hyperparameter.
+7. Analyze the effect of changing each hyperparameter. 
 
 `hnswlib` supports creating an index with `Index(space='l2'/'cosine'/'ip', dim=...)`, initializing with `ef_construction` and `M`, adding items, and controlling search quality/speed with `set_ef(...)`. Higher `ef` generally improves recall but slows search; larger `M` increases memory use and can improve accuracy.
 
