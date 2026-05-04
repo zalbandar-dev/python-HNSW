@@ -51,19 +51,11 @@ The datasets used here come from ANN-Benchmarks-style HDF5 files: `sift-128-eucl
 
 ```text
 project/
-├── benchmark_hnsw.py          # Main benchmark script
-├── plot_results.py            # Aggregation + plotting script
-├── requirements.txt           # Python dependencies
-├── datasets/                  # Downloaded HDF5 datasets live here
-├── results_data/              # JSON benchmark outputs
+├── hnsw.py                    # Main benchmark script
+├── main.py                    # Aggregation + plotting script
 ├── esrp_plots/                # Saved PNG plots
 └── README.md                  # This guide
 ```
-
-If you're starting from the notebook-style code, split it into two scripts:
-
-- **`benchmark_hnsw.py`** — dataset loading, dimensionality reduction, index building, search timing, benchmark loops, result saving.
-- **`plot_results.py`** — JSON loading, aggregation, visualization.
 
 ---
 
@@ -116,79 +108,10 @@ This project uses:
 
 ---
 
-## 4. Important Fixes Before Running
-
-The pasted code contains a few notebook-export artifacts that must be cleaned up.
-
-### 4.1 Fix script entry point
-
-Replace:
-
-```python
-if name == "main":
-```
-
-with:
-
-```python
-if __name__ == "__main__":
-```
-
-Do this in **both** scripts.
-
-### 4.2 Remove stray `text` lines
-
-Lines like:
-
-```python
-text
-```
-
-will raise `NameError`. Delete them.
-
-### 4.3 Turn section headers into comments
-
-Replace:
-
-```text
-============================================================
-HYPERPARAMETERS
-============================================================
-```
-
-with:
-
-```python
-# ============================================================
-# HYPERPARAMETERS
-# ============================================================
-```
-
-### 4.4 Fix the encoding line
-
-Use:
-
-```python
-#!/usr/bin/env python
-# coding: utf-8
-```
-
-not:
-
-```python
-#!/usr/bin/env python
-
-coding: utf-8
-```
-
----
-
-## 5. Running the Benchmark
-
-After cleaning the script:
+## 4. Running the Benchmark
 
 ```bash
-python benchmark_hnsw.py
+python main.py
 ```
 
 The script will:
@@ -212,12 +135,12 @@ results_data/
 
 ---
 
-## 6. Running the Plotting Script
+## 5. Running the Plotting Script
 
 After at least one benchmark run:
 
 ```bash
-python plot_results.py
+python main.py
 ```
 
 This script will:
@@ -238,7 +161,7 @@ esrp_plots/
 
 ---
 
-## 7. Main Hyperparameters
+## 6. Main Hyperparameters
 
 ```python
 EF_CONSTRUCTION = 200
@@ -265,7 +188,9 @@ WORST_X_PERCENT = 0.03
 
 ---
 
-## 8. Current Parameter Grid
+## 7. Current Parameter Grid
+
+Here we store how we iterate through the parameters to get our full results. 
 
 ```python
 PARAM_GRID = {
@@ -290,25 +215,10 @@ Expands to:
 
 Because the script runs both SIFT and DEEP, that's up to **2000 benchmark attempts**. DEEP has original dim 96, so `target_dim=120` is skipped automatically.
 
-For a quick smoke test:
-
-```python
-PARAM_GRID = {
-    "ef_construction": [100],
-    "graph_degree":    [16],
-    "ef_search":       [50, 100],
-    "target_dim":      [32],
-    "k_neighbors":     [10],
-}
-
-NUM_QUERIES = 100
-MAX_ELEMENTS_DEEP1B = 100000
-NUM_RUNS = 1
-```
-
+F
 ---
 
-## 9. Output JSON Schema
+## 8. Output JSON Schema
 
 ```json
 {
@@ -330,7 +240,7 @@ NUM_RUNS = 1
 
 ---
 
-## 10. Function Documentation
+## 9. Function Documentation
 
 ### `download_file(url, filepath)`
 
@@ -458,7 +368,7 @@ For each hyperparameter:
 
 ---
 
-## 11. How to Modify the Benchmark
+## 10. How to Modify the Benchmark
 
 ### Change the dimensionality-reduction method
 
@@ -508,49 +418,10 @@ NUM_RUNS = 3
 
 ---
 
-## 12. Recommended Next Improvements
+## 11. Moving forward
 
-### 12.1 Add recall measurement
 
-Currently the script measures **latency only**. Add:
-
-```python
-def compute_recall(predicted_labels, ground_truth, k):
-    """Compute average recall@k."""
-    recalls = []
-    for pred, true in zip(predicted_labels, ground_truth):
-        pred_set = set(pred[:k])
-        true_set = set(true[:k])
-        recalls.append(len(pred_set & true_set) / k)
-    return float(np.mean(recalls))
-```
-
-Modify `search_hnsw` to return labels too:
-
-```python
-def search_hnsw(index, queries, k, ef_search):
-    """Search HNSW and return labels, distances, per-query times."""
-    index.set_ef(ef_search)
-    index.knn_query(queries[:10], k=k)  # warm-up
-
-    labels_all, distances_all, per_query_times = [], [], []
-
-    for i in tqdm(range(len(queries)), desc="Querying HNSW", leave=False):
-        query = queries[i:i + 1]
-        start = time.perf_counter()
-        labels, distances = index.knn_query(query, k=k)
-        elapsed = time.perf_counter() - start
-
-        labels_all.append(labels[0])
-        distances_all.append(distances[0])
-        per_query_times.append(elapsed)
-
-    return np.array(labels_all), np.array(distances_all), per_query_times
-```
-
-> If you evaluate `k_neighbors` larger than the original `K_NEIGHBORS`, load more ground-truth columns.
-
-### 12.2 Cache reduced datasets
+### 11.1 Cache reduced datasets
 
 PCA is currently refit for every parameter combination. Cache by `(dataset_name, reduction_method, target_dim)`:
 
@@ -564,18 +435,7 @@ if cache_key not in reduction_cache:
 train_reduced, test_reduced, reducer = reduction_cache[cache_key]
 ```
 
-### 12.3 Save build / reduction time
-
-```python
-"reduction_time": reduction_time,
-"build_time": build_time,
-"mean_query_time": float(np.mean(query_times)),
-"median_query_time": float(np.median(query_times)),
-"p95_query_time": float(np.percentile(query_times, 95)),
-"p99_query_time": float(np.percentile(query_times, 99))
-```
-
-### 12.4 Optionally save raw labels/distances
+### 11.2 Optionally save raw labels/distances
 
 Useful for debugging recall, but increases JSON size:
 
@@ -586,55 +446,8 @@ Useful for debugging recall, but increases JSON size:
 
 ---
 
-## 13. Troubleshooting
 
-### `NameError: name 'name' is not defined`
-
-Use `if __name__ == "__main__":`.
-
-### `NameError: name 'text' is not defined`
-
-Delete all standalone `text` lines.
-
-### Benchmark takes too long
-
-Use a smaller grid:
-
-```python
-PARAM_GRID = {
-    "ef_construction": [100],
-    "graph_degree":    [16],
-    "ef_search":       [50],
-    "target_dim":      [32],
-    "k_neighbors":     [10],
-}
-
-NUM_QUERIES = 100
-MAX_ELEMENTS_DEEP1B = 100000
-```
-
-### Out of memory
-
-- Reduce `MAX_ELEMENTS_DEEP1B`.
-- Use smaller `graph_degree` values.
-- Avoid very large `M`.
-
-### Plotting fails — no JSON files
-
-Run the benchmark first:
-
-```bash
-python benchmark_hnsw.py
-python plot_results.py
-```
-
-### `target_dim` is skipped
-
-By design: skipped if `target_dim >= original_dim`. For DEEP, `target_dim=120` is skipped (original = 96).
-
----
-
-## 14. Suggested Learning Resources
+## 12. Suggested Learning Resources
 
 - **hnswlib Python examples** — index creation, `init_index`, `add_items`, `set_ef`, querying, parameter notes.
 - **scikit-learn PCA documentation** — PCA parameters and projection behavior.
@@ -646,74 +459,5 @@ By design: skipped if `target_dim >= original_dim`. For DEEP, `target_dim=120` i
 
 ---
 
-## 15. Minimal Workflow for a New Student
-
-```bash
-git clone <project-repo>
-cd <project-repo>
-
-python -m venv .venv
-source .venv/bin/activate        # macOS/Linux
-# or .venv\Scripts\Activate.ps1  # Windows PowerShell
-
-pip install -r requirements.txt
-```
-
-Smoke test by reducing the grid:
-
-```python
-PARAM_GRID = {
-    "ef_construction": [100],
-    "graph_degree":    [16],
-    "ef_search":       [50],
-    "target_dim":      [32],
-    "k_neighbors":     [10],
-}
-
-NUM_QUERIES = 100
-MAX_ELEMENTS_DEEP1B = 100000
-```
-
-Run:
-
-```bash
-python benchmark_hnsw.py
-python plot_results.py
-```
-
-Check:
-
-```text
-results_data/
-esrp_plots/
-```
-
-If those contain JSON files and PNG plots, the pipeline is working.
-
----
-
-## 16. Current Project Status
-
-### ✅ What works
-
-- Dataset download / loading.
-- PCA or Gaussian random projection.
-- HNSW index construction.
-- Per-query latency measurement.
-- Worst-tail query-time calculation.
-- JSON result saving.
-- Aggregated plotting across runs.
-
-### 🚧 What still needs improvement
-
-- Recall@k calculation.
-- PCA / reduction caching.
-- Better memory accounting.
-- Saving build / reduction / search summary statistics.
-- Cleaner experiment configuration (YAML / JSON / CLI args).
-- More robust handling of DEEP ground truth when using subsets.
-- Optional multiprocessing or job scheduling for large parameter grids.
-
----
 
 *Last updated: 2026-05-04*
