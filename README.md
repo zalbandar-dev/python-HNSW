@@ -15,8 +15,8 @@ Benchmarking approximate nearest-neighbor search using `hnswlib` on standard ANN
 8. [Current Parameter Grid](#8-current-parameter-grid)
 9. [Output JSON Schema](#9-output-json-schema)
 10. [Function Documentation](#10-function-documentation)
-11. [Moving Forward](#12-recommended-next-improvements)
-12. [Suggested Learning Resources](#14-suggested-learning-resources)
+11. [Moving Forward](#11-recommended-next-improvements)
+12. [Suggested Learning Resources](#12-suggested-learning-resources)
 
 
 ---
